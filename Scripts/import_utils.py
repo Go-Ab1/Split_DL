@@ -22,5 +22,4 @@ import torch.nn.functional as F
 from torch.utils.data import random_split
 from torchvision.datasets import CIFAR10
 
-# source ~/pytorch_env/bin/activate
 
