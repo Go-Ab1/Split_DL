@@ -23,11 +23,7 @@ class DatasetLoader:
 
     def get_dataloaders(self):
 
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
-        
+       
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -38,7 +34,7 @@ class DatasetLoader:
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
         
-        # Check if dataset is already downloaded
+        # downloaded??
         download_flag = not self.dataset_exists()
 
         full_trainset = CIFAR10(root=self.data_dir, train=True, download=download_flag, transform=transform_train)
@@ -52,7 +48,6 @@ class DatasetLoader:
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=self.shuffle, num_workers=self.num_workers)
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
-
         return train_loader, val_loader, test_loader
     
 
