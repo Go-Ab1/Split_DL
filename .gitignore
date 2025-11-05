@@ -1,2 +1,5 @@
-#Dataset
-/Dataset/* 
+Dataset/* 
+media/*
+logs/*
+models/*
+Scripts/__pycache__/

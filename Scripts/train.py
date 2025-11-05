@@ -6,7 +6,7 @@ from data_loader import DatasetLoader
 Main for Training
 """
 class MainModelTrain:
-    def __init__(self, data_dir, batch_size=64, num_epochs=30, alpha=1, lr=0.01, log_file="training_log.txt", save_dir="media"):
+    def __init__(self, data_dir, batch_size=64, num_epochs=25, alpha=1, lr=0.01, log_file="training_log.txt", save_dir="media"):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') 
         self.inference_device = torch.device('cpu')  # Inference on CPU
         self.num_epochs = num_epochs
@@ -16,7 +16,7 @@ class MainModelTrain:
         self.save_dir_checker(self.save_dir)
         self.log_file = os.path.join(self.save_dir, "training_log.txt")
         # Dataset
-        data_loader = DatasetLoader(data_dir, batch_size=self.batch_size, val_split=0.1)
+        data_loader = DatasetLoader(data_dir, batch_size=self.batch_size, val_split=0.2)
         self.train_loader, self.val_loader, self.test_loader = data_loader.get_dataloaders()
 
         # Model
@@ -24,7 +24,7 @@ class MainModelTrain:
         self.criterion = nn.CrossEntropyLoss()
         # weight_decay = L2 regularization--> 4e-5(default for cifar10)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=4e-4)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.5, patience=0)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.5, patience=2)
 
         # Initialize log file
         with open(self.log_file, "w") as f:

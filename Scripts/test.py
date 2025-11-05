@@ -81,7 +81,7 @@ class TestChecker:
             for _ in range(num_runs):
                 _ = self.model(images)
         end = time.time()
-        avg_latency_batch = (end - start) / num_runs  # seconds
+        avg_latency_batch = (end - start) / num_runs 
         avg_latency_image = avg_latency_batch / images.size(0)
         print(f"Avg CPU inference latency(batch_size:{batch_size}): {avg_latency_batch:.4f} s")
         print(f"Avg CPU inference latency per image: {avg_latency_image:.4f} s")

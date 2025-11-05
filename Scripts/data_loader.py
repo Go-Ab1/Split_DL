@@ -1,33 +1,44 @@
-from import_utils import *
-
+from helpers.global_import import *
 
 '''
 Main For Dataset Loading!
 '''
 class DatasetLoader:
-    def __init__(self, data_dir, batch_size=32, val_split=0.15, num_workers=4):
+    '''Dataset loading and preprocessing for CIFAR-10
+    Args:
+        data_dir: Directory where dataset is stored/ downloaded
+        batch_size: Batch size for DataLoader
+        val_split: Fraction of training data to use for validation
+        num_workers: Number of subprocesses to use for data loading
+    Outputs..[returns]:
+        train_loader, val_loader, test_loader: DataLoaders for training, validation, and test sets
+    '''
+    def __init__(self, data_dir, batch_size=64, val_split=0.2, num_workers=4):
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.val_split = val_split
+        self.check_make_dataset_dir(self.data_dir)
 
-        # Check if Folder exists
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
+    def check_make_dataset_dir(self, folder):
+        # CIFAR-10 dataset folder
+        if not os.path.exists(folder):
+            os.makedirs(folder)
 
-    # CIFAR-10 dataset folder
     def dataset_exists(self)->bool:
         dataset_check = os.path.exists(os.path.join(self.data_dir, 'cifar-10-batches-py'))
-        print("Dataset exists?", dataset_check)
+        # print("Dataset exists?", dataset_check)
         return dataset_check    
 
     def get_dataloaders(self):
-        
+        ''''
+        To make sure the model generalizes well, we apply data augmentation techniques to the training data.
+        '''
         transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
+            transforms.RandomCrop(32, padding=4), 
             transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(10),            # small rotations
-            transforms.ColorJitter(0.2, 0.2, 0.2, 0.1), # brightness, contrast, saturation, hue
+            transforms.RandomRotation(10),           
+            transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
         ])
@@ -52,7 +63,6 @@ class DatasetLoader:
 
         print(f"[INFO] Loaded {self.data_dir} -> "
         f"Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
-
         
         return train_loader, val_loader, test_loader
     

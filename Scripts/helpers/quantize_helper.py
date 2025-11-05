@@ -14,7 +14,6 @@ class QuantizationLogger:
         if clear_log:
             open(self.log_path, "w").close()
 
-        # Add timestamp header [time runnned]
         self._write_header()
 
     def _write_header(self):
