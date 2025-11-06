@@ -1,10 +1,5 @@
-# Deep Learning  for Embedded Device Deployment
-
-
-
+<!-- # Deep Learning  for Embedded Device Deployment -->
 ## Overview
-
-
 This repository's focus is development, training, evaluation, and deployment of deep learning models optimized for embedded devices. 
 
   Model Training: Implementation of lightweight architectures MobileNetV2 modified to small size of inputs for classification tasks, with support for CPU/GPU training.
@@ -21,7 +16,6 @@ This project is intended for deploying efficient models on low-resource platform
 
 
 ## Code Structure
-
 ```bash
 Scripts/
 │
@@ -36,8 +30,6 @@ Scripts/
 │   └── quantize_helper.py
 
 ```
-
-
 
 ## Installation
 
@@ -60,14 +52,11 @@ pip install -r requirements.txt
 ```
 
 
-
-
-
 ## Usage
 
 ### Run Tasks Using main
 
-You can run training, testing, and post-training quantization (PTQ) tasks using the `main.py` script. Tasks can be executed individually or sequentially by passing arguments to the script:
+Training, testing, and post-training quantization (PTQ) can be executed  using the `main.py` script. Tasks can be executed individually or sequentially by passing arguments.
 `
 To run a single task, provide the task name as an argument.
 
@@ -90,26 +79,24 @@ python3 main.py train test
 python3 main.py train quantize
 ```
 
-
-
 # Configuration Parameters (config.yaml)
 
 The following parameters can be modified to adjust as required.
 ```yaml
-data_dir: Dataset
+data_dir: ../Dataset
 batch_size: 64
 n_calib_batch: 32
 num_epochs: 25
 learning_rate: 0.01
 alpha: 1.0
-media_log_dir: media
+media_log_dir: ../media
 model_log: training_log.txt
 test_log: test_log.txt
 val_split: 0.1
 num_workers: 4
 visualize_losses: true
 visualize_accuracies: true
-models_dir: models
+models_dir: ../models
 compare_models: true
 comparison_log_name: comparison_log.txt
 trained_model_name: final_model.pth
