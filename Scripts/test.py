@@ -2,15 +2,21 @@ from helpers.global_import import *
 from model_network import ModifiedMobileNetV2
 from data_loader import DatasetLoader
 
+
 class TestChecker:
     def __init__(self, model , test_loader: DataLoader, device="cpu", class_names=None, save_dir="media", log_file="test_log.txt"):
         """
-        Args:
-            model: Trained PyTorch model
-            test_loader: DataLoader for test dataset
-            device: 'cpu' 
+        Class to evaluate a trained PyTorch model on test dataset, compute metrics,
+        generate confusion matrix and classification reports, measure inference latency,
+        save results to file, and visualize sample predictions.
 
-            log_file: file to save test metrics
+        Args:
+            model (torch.nn.Module): Trained PyTorch model
+            test_loader (DataLoader): DataLoader providing test dataset batches
+            device (str or torch.device): Device for inference ('cpu' or 'cuda')
+            class_names (list of str): Optional list of class names for display
+            save_dir (str): Directory to save test logs and figures
+            log_file (str): Filename to store test metrics and reports
         """
         self.test_loader = test_loader
         self.device = device
@@ -24,6 +30,14 @@ class TestChecker:
     @torch.no_grad() 
     # @torch.inference_mode()
     def evaluate(self):
+        """
+        Evaluate the model's accuracy on the test dataset.
+
+        Returns:
+            accuracy (float): Overall accuracy on the test set.
+            all_labels (np.array): True labels concatenated from all test batches.
+            all_preds (np.array): Predicted labels concatenated from all test batches.
+        """
         self.model.eval()
         # total_loss = 0
         correct, total = 0, 0
@@ -47,6 +61,16 @@ class TestChecker:
         return  accuracy, np.array(all_labels), np.array(all_preds)
 
     def compute_confusion_matrix(self, labels, preds):
+        """
+        Compute and display the confusion matrix as a heatmap.
+
+        Args:
+            labels (np.array): True labels.
+            preds (np.array): Predicted labels.
+
+        Returns:
+            np.array: Confusion matrix array.
+        """
         cm = confusion_matrix(labels, preds)
         plt.figure(figsize=(10, 8))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=self.class_names, yticklabels=self.class_names)
@@ -57,13 +81,30 @@ class TestChecker:
         return cm
 
     def classification_report(self, labels, preds):
+        """
+        Generate and print classification metrics report.
+
+        Args:
+            labels (np.array): True labels.
+            preds (np.array): Predicted labels.
+
+        Returns:
+            str: Text classification report.
+        """
         report = classification_report(labels, preds, target_names=self.class_names)
         print(report)
         return report
     
     def measure_inference_latency(self, num_runs=5, batch_size=32):
         """
-        Measure average inference latency on CPU.
+        Measure average inference latency per batch and per image on the specified device.
+
+        Args:
+            num_runs (int): Number of runs to average latency over.
+            batch_size (int): Number of images per batch for inference timing.
+
+        Returns:
+            tuple: (avg_latency_batch, avg_latency_per_image) in seconds.
         """
         # print(f"Measuring inference latency on device: {self.device}")
         self.model.eval().to(self.device)
@@ -89,6 +130,17 @@ class TestChecker:
 
 
     def save_results(self, accuracy, report, cm, latency_batch=None, latency_image=None):
+        """
+        Save test results including accuracy, classification report, confusion matrix,
+        and optional inference latency metrics to a text file.
+
+        Args:
+            accuracy (float): Test accuracy.
+            report (str): Classification report.
+            cm (np.array): Confusion matrix.
+            latency_batch (float, optional): Average batch inference latency.
+            latency_image (float, optional): Average per-image inference latency.
+        """
         path = os.path.join(self.save_dir, self.log_file)
         with open(path, "w") as f:
             f.write(f"Test Accuracy: {accuracy:.4f}\n")
@@ -104,6 +156,13 @@ class TestChecker:
 
    
     def visualize_samples(self, num_samples=30, save_fig=True):
+        """
+        Visualize a grid of sample test images with predicted and true labels color-coded.
+
+        Args:
+            num_samples (int): Number of samples to visualize.
+            save_fig (bool): Whether to save the figure to save_dir.
+        """
         class_labels = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer",
                         5: "dog", 6: "frog", 7: "horse", 8: "ship", 9: "truck"}
 
@@ -137,7 +196,7 @@ class TestChecker:
 
 
 # # ======================
-# # Usage
+# # Usage [Test...]
 # # ======================
 if __name__ == "__main__":
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

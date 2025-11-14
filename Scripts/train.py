@@ -1,11 +1,35 @@
-
 from model_network import *
 from data_loader import DatasetLoader
 
-"""
-Main for Training
-"""
+
+##===============================
+# MainModelTrain
+# Handles training of ModifiedMobileNetV2 on CIFAR-10 dataset.
+# Supports configurable batch size, number of epochs, learning rate,
+# width multiplier alpha for model scaling, logging, and model saving.
+#===============================
+
 class MainModelTrain:
+
+    """
+    MainModelTrain Class
+    Handles training, validation, evaluation, logging, model saving, and measuring model size 
+    for the ModifiedMobileNetV2 model on CIFAR-10 dataset.
+
+    Attributes:
+        device (torch.device): Computes on GPU if available, else CPU.
+        inference_device (torch.device): Fixed CPU device for inference.
+        num_epochs (int): Number of training epochs.
+        lr (float): Initial learning rate.
+        batch_size (int): Mini-batch size.
+        save_dir (str): Directory path for saving models and logs.
+        log_file (str): CSV file path for training statistics logging.
+        train_loader, val_loader, test_loader (DataLoader): Data loaders for respective datasets.
+        model (nn.Module): MobileNetV2-based classification model.
+        criterion: CrossEntropyLoss for classification.
+        optimizer: SGD with momentum and L2 weight decay.
+        scheduler: Learning rate scheduler reducing LR on plateau of validation loss.
+    """
     def __init__(self, data_dir, batch_size=64, num_epochs=25, alpha=1, lr=0.01, log_file="training_log.txt", save_dir="media"):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') 
         self.inference_device = torch.device('cpu')  # Inference on CPU
@@ -39,6 +63,13 @@ class MainModelTrain:
 
     # Per Epoch Training
     def train_epoch(self):
+        """
+        Executes training for one epoch over the entire train dataset.
+
+        Returns:
+            avg_training_loss (float): Average loss over all samples.
+            training_accuracy (float): Training accuracy over the epoch.
+        """
         self.model.train()
         training_loss = 0
         correct, total = 0, 0
@@ -60,6 +91,16 @@ class MainModelTrain:
 
     @torch.no_grad()
     def evaluate(self, loader):
+        """
+        Evaluate model performance on provided DataLoader (validation or test).
+
+        Args:
+            loader (DataLoader): DataLoader for evaluation dataset.
+
+        Returns:
+            avg_loss (float): Average loss on evaluation data.
+            accuracy (float): Accuracy metric over evaluation data.
+        """
         self.model.eval()
         total_loss, correct, total = 0, 0, 0
         for images, labels in loader:
@@ -75,6 +116,13 @@ class MainModelTrain:
 
     # MODEL SIZE IN MB[] at for now removed after checked
     def measure_model_size(self):
+        """
+        Saves the model to disk to measure model size in megabytes.
+
+        Returns:
+            size_mb (float): Size of saved model file in megabytes.
+        """
+           
         torch.save(self.model.state_dict(), "temp.pth")
         size_mb = os.path.getsize("temp.pth") / 1e6
         os.remove("temp.pth")
@@ -83,7 +131,13 @@ class MainModelTrain:
 
     def save_model(self, filename="final_model.pth"):
         """
-        Save the trained model to the models directory.
+        Saves the trained model’s state_dict to a models directory.
+
+        Args:
+            filename (str): Name of the file to save the model.
+
+        Returns:
+            str: Path to the saved model file.
         """
         models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "models")
         os.makedirs(models_dir, exist_ok=True)
@@ -94,6 +148,13 @@ class MainModelTrain:
         return save_path
 
     def train(self):
+        """
+        Main training loop over num_epochs.
+
+        Logs training and validation losses and accuracies file,
+        adjusts learning rate on validation loss plateaus,
+        and saves the final trained model at the end.
+        """
         training_start_time = time.time()
         iteration = 0
         for epoch in range(self.num_epochs):
