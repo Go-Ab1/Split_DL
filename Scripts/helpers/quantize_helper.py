@@ -5,15 +5,14 @@ class QuantizationLogger:
     def __init__(self, base_dir="media", log_name="comparison_log.txt",
                  clear_log=True, root_dir=None):
         """
-        root_dir: optional root directory to join relative paths to.
-        If not provided, default to the directory of this file.
-        """
+        Handles logging of quantization/model comparison results.
 
-        # If root_dir not provided, always use the file directory as root
+        Creates a log file, writes headers, allows structured logging of metrics,
+        comparisons, and finalization. Supports optional root directory.
+        """
         if root_dir is None:
             root_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # media directory resolved safely relative to the chosen root
         self.log_dir = os.path.join(root_dir, base_dir)
 
         os.makedirs(self.log_dir, exist_ok=True)
@@ -28,6 +27,7 @@ class QuantizationLogger:
 
 
     def _write_header(self):
+        """Writes the header section to the log file."""
         run_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.log_to_file("========== Model Comparison Log ==========")
         self.log_to_file(f"Run Time: {run_time}")
@@ -39,7 +39,14 @@ class QuantizationLogger:
             f.write(content + "\n")
 
     def log_section(self, title, data_dict):
-        """Logs a formatted section (e.g., model metrics)."""
+        
+        """
+        Logs a formatted section with a title and key-value pairs.
+
+        Parameters:
+            title (str): The section title.
+            data_dict (dict): Dictionary of metrics to log.
+        """
         self.log_to_file(f"========== {title} ==========")
         for k, v in data_dict.items():
             if isinstance(v, float):
@@ -49,7 +56,15 @@ class QuantizationLogger:
         self.log_to_file("")
 
     def compare_and_log(self, metric_name, before, after):
-        """Logs comparison results between two metrics."""
+        
+        """
+        Compares two metric values and logs the percentage change.
+        Parameters:
+            metric_name (str): Name of the metric being compared.
+            before (float): Metric value before quantization.
+            after (float): Metric value after quantization.
+        """
+
         diff = after - before
         pct_change = (diff / before) * 100 if before != 0 else 0
         msg = (f"{metric_name}: {'Increased' if diff >= 0 else 'Decreased'} "
@@ -58,5 +73,6 @@ class QuantizationLogger:
         self.log_to_file(msg)
 
     def finalize(self):
+
         self.log_to_file("\n==========================================")
         print(f"\n Done and Log saved @: {self.log_path}")

@@ -197,7 +197,7 @@ class MainModelTrain:
 
 
 # ===============================
-# Run[]
+# Mock Run
 # ===============================
 if __name__ == "__main__":
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

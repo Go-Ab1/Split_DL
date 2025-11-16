@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class LogPlotter:
     """
-    TXT file plotter.
+    TXT file plotter 
     """
     def __init__(self, log_path):
         self.log_path = log_path
@@ -57,7 +57,7 @@ class LogPlotter:
         plt.show()
 
     # ----------------------------------------------------------
-    # OPTIONAL: Keep your combined plot if needed
+    # OPTIONAL: Keep combined plot if needed
     # ----------------------------------------------------------
     def plot_all(self):
         fig, ax1 = plt.subplots(figsize=(10, 6))

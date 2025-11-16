@@ -1,5 +1,5 @@
 Dataset/* 
-media/*
+# media/*
 logs/*
 models/*
 Scripts/__pycache__/

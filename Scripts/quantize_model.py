@@ -9,14 +9,25 @@ from test import TestChecker
 # -------------------------------
 class CompressionManager:
     def __init__(self, model, backend="fbgemm"):
+        """
+        Manages model compression and quantization processes.
+         Args:
+            model (nn.Module): The model to be quantized.
+            backend (str): Quantization backend, either 'qnnpack' or 'fbgemm'.
+        """
 
         self.model = model
-        self.backend = backend  # qnnpack or fbgemm or xnnpack
-        
+        self.backend = backend  # qnnpack or fbgemm
         torch.backends.quantized.engine = backend
 
     @staticmethod
     def relu_changer(module):
+        """
+        Changes ReLU6 activations to ReLU
+        quantization compatibility
+        Inplace = True: Inputs are modified 
+        Inplace = False: Inputs are not modified in place
+        """
         for name, mod in module.named_children():
             CompressionManager.relu_changer(mod)
             if isinstance(mod, (nn.ReLU, nn.ReLU6)):
@@ -24,6 +35,15 @@ class CompressionManager:
 
     @staticmethod
     def calibrate(model, dataloader, n_batches=64):
+        """
+        Calibration process for Post-Training Quantization (PTQ).
+        To determine qunantization parameters [scale, zero-point].
+        From FP32 to INT8
+        Args:
+            model (nn.Module): The quantized model to be calibrated.
+            dataloader (DataLoader): DataLoader for calibration data.
+            n_batches (int): Number of batches to use for calibration.
+        """
         model.eval()
         with torch.no_grad():
             for i, (inputs, _) in enumerate(dataloader):
@@ -33,6 +53,18 @@ class CompressionManager:
                     break
 
     def apply_ptq(self, state_dict, calib_loader, example_inputs, n_calib_batch=64):
+        """
+        Applies Post-Training Quantization (PTQ)
+        Torch FX-based quantization workflow.
+        Args:
+            state_dict (dict): State dictionary of the pre-trained model.
+            calib_loader (DataLoader): DataLoader for calibration data.
+            example_inputs (tuple): Example inputs for model tracing.
+            n_calib_batch (int): Number of batches to use for calibration.
+        Returns:
+            nn.Module: The quantized model.
+
+        """
         self.model.load_state_dict(state_dict)
         self.relu_changer(self.model)
         qconfig = {"": get_default_qconfig(self.backend)}

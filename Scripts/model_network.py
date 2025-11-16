@@ -130,7 +130,6 @@ class ModifiedMobileNetV2(nn.Module):
         )
 
         self.conv1 = nn.Conv2d(int(320 * alpha), 1280, kernel_size=1, bias=False) 
-        # self.avgpool = nn.AvgPool2d(7) 
         self.bn1 = nn.BatchNorm2d(1280)
         self.fc = nn.Linear(1280, output_size) 
         WeightsInitializer.initialize(self)  
@@ -147,10 +146,11 @@ class ModifiedMobileNetV2(nn.Module):
         """
         x = F.relu6(self.bn0(self.conv0(inputs)), inplace=True) 
         x = self.bottlenecks(x)
+        # for i, block in enumerate(self.bottlenecks):
+        #     x = block(x)
+        #     print(f"Bottleneck {i} output shape: {x.shape}, approx size(batch): {x.numel() * 4 / 1024:.2f} KB")
         x = F.relu6(self.bn1(self.conv1(x)), inplace=True)
-        x = F.adaptive_avg_pool2d(x, 1)
+        x = F.adaptive_avg_pool2d(x, 1) 
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
-
-
