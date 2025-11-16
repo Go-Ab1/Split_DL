@@ -2,15 +2,14 @@ from model_network import *
 from data_loader import DatasetLoader
 
 
-##===============================
+##======================================================
 # MainModelTrain
 # Handles training of ModifiedMobileNetV2 on CIFAR-10 dataset.
 # Supports configurable batch size, number of epochs, learning rate,
 # width multiplier alpha for model scaling, logging, and model saving.
-#===============================
+#======================================================
 
 class MainModelTrain:
-
     """
     MainModelTrain Class
     Handles training, validation, evaluation, logging, model saving, and measuring model size 

@@ -8,10 +8,10 @@ from test import TestChecker
 # Compression / Quantization Manager
 # -------------------------------
 class CompressionManager:
-    def __init__(self, model, backend="qnnpack"):
+    def __init__(self, model, backend="fbgemm"):
 
         self.model = model
-        self.backend = backend  # qnnpack
+        self.backend = backend  # qnnpack or fbgemm or xnnpack
         
         torch.backends.quantized.engine = backend
 
@@ -45,11 +45,15 @@ class CompressionManager:
 # CIFAR-10 Evaluation / Workflow
 # -------------------------------
 class CIFAR10Evaluator:
-    def __init__(self, data_dir, model_dir="models", batch_size=64, n_calib_batch=64, backend="qnnpack" , compare = True, seed=1000): 
-        self.data_dir = os.path.expanduser(data_dir)
-        self.model_dir = model_dir
+    def __init__(self, data_dir, model_dir="models", batch_size=64, n_calib_batch=64, backend="fbgemm" , compare = True, seed=1000): 
+        # self.data_dir = os.path.expanduser(data_dir)
         self.compare = compare
+
+        self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
+        self.model_dir = os.path.abspath(os.path.expanduser(model_dir))
+
         os.makedirs(self.model_dir, exist_ok=True)
+
 
         self.batch_size = batch_size
         self.n_calib_batch = n_calib_batch
@@ -73,16 +77,16 @@ class CIFAR10Evaluator:
         self.model = ModifiedMobileNetV2(output_size=10).to(self.device)
         self.quant_manager = CompressionManager(self.model, backend=self.backend)
         self.example_inputs = (torch.randn(1, 3, 32, 64),) 
-
   
-    def load_state_dict(self, filename="final_model.pth"):
-        model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models", filename)
-        state_dict = torch.load(model_path, map_location="cpu")
-        self.model.load_state_dict(state_dict)  
-        return state_dict 
+
+    def load_state_dict(self, model_file):
+        state_dict = torch.load(model_file, map_location="cpu")
+        self.model.load_state_dict(state_dict)
+        return state_dict
 
 
-    def run_ptq(self, model_file="final_model.pth", save_name="scripted_model_ptq.pth"):
+
+    def run_ptq(self, model_file, save_name):
         state_dict = self.load_state_dict(model_file)
         self.model = self.quant_manager.apply_ptq(state_dict, self.calib_loader, self.example_inputs, self.n_calib_batch)
         self.save_scripted_model(save_name)
@@ -122,11 +126,11 @@ class CIFAR10Evaluator:
         print(f"Avg CPU latency per image: {latency_per_image:.4f} s")
         return avg_latency_batch, latency_per_image
 
-
-    def save_scripted_model(self, filename="scripted_model.pth"):
-        path = os.path.join(self.model_dir, filename)
-        torch.jit.save(torch.jit.script(self.model.cpu()), path) 
+    def save_scripted_model(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        torch.jit.save(torch.jit.script(self.model.cpu()), path)
         print(f"Saved scripted model: {path}")
+
         
 
 # --- - -- -----------------------

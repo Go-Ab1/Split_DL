@@ -1,19 +1,29 @@
 from helpers.global_import import *
 
-'''
-Main For Dataset Loading!
-'''
+
+# ==================================================
+# DatasetLoader
+# Handles loading and preprocessing of the CIFAR-10 dataset.
+# Provides train, validation, and test DataLoader objects.
+# Supports data augmentation on training data and configurable
+# batch size, validation split, and number of workers for loading.
+# ==================================================
+
 class DatasetLoader:
-    '''Dataset loading and preprocessing for CIFAR-10
-    Args:
-        data_dir: Directory where dataset is stored/ downloaded
-        batch_size: Batch size for DataLoader
-        val_split: Fraction of training data to use for validation
-        num_workers: Number of subprocesses to use for data loading
-    Outputs..[returns]:
-        train_loader, val_loader, test_loader: DataLoaders for training, validation, and test sets
     '''
-    def __init__(self, data_dir, batch_size=64, val_split=0.2, num_workers=4):
+    Dataset loading and preprocessing class for CIFAR-10.
+
+    Args:
+        data_dir (str): Directory path where dataset is stored or will be downloaded.
+        batch_size (int): Batch size used by DataLoader.
+        val_split (float): Fraction of training data reserved for validation.
+        num_workers (int): Number of subprocesses used for data loading.
+
+    Returns:
+        train_loader, val_loader, test_loader (DataLoader): PyTorch DataLoaders
+        for training, validation, and test sets respectively.
+    '''
+    def __init__(self, data_dir, batch_size=64, val_split=0.1, num_workers=4):
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -21,19 +31,37 @@ class DatasetLoader:
         self.check_make_dataset_dir(self.data_dir)
 
     def check_make_dataset_dir(self, folder):
+        """
+        Verify if dataset directory exists; create if not.
+
+        Args:
+            folder (str): Dataset directory path.
+        """
         # CIFAR-10 dataset folder
         if not os.path.exists(folder):
             os.makedirs(folder)
 
     def dataset_exists(self)->bool:
+        """
+        Checks if CIFAR-10 dataset files exist locally.
+
+        Returns:
+            bool: True if dataset folder exists, False otherwise.
+        """
         dataset_check = os.path.exists(os.path.join(self.data_dir, 'cifar-10-batches-py'))
         # print("Dataset exists?", dataset_check)
         return dataset_check    
 
     def get_dataloaders(self):
-        ''''
-        To make sure the model generalizes well, we apply data augmentation techniques to the training data.
-        '''
+        
+        """
+        Create train, validation, and test DataLoader objects with data augmentations.
+
+        Training data is augmented with random crops, flips, rotations, and color jitter.
+
+        Returns:
+            tuple: train_loader, val_loader, test_loader (PyTorch DataLoader instances)
+        """
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4), 
             transforms.RandomHorizontalFlip(),

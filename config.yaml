@@ -1,7 +1,7 @@
-data_dir: ~/ANT_DC12_UniTrento/Dataset
+data_dir: Dataset
 batch_size: 64
 n_calib_batch: 32
-num_epochs: 25
+num_epochs: 2
 learning_rate: 0.01
 alpha: 1.0
 media_log_dir: media
@@ -13,7 +13,8 @@ visualize_losses: true
 visualize_accuracies: true
 models_dir: models
 compare_models: true
+num_runs_latency: 5
 comparison_log_name: comparison_log.txt
 trained_model_name: final_model.pth
-quantized_model_name: quantized_model.
+quantized_model_name: quantized_model.pth
 quantization: false 
