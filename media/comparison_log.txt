@@ -1,0 +1,26 @@
+========== Model Comparison Log ==========
+Run Time: 2025-11-16 01:22:46
+==========================================
+
+Backend: fbgemm
+Device: cpu
+
+========== Full-Precision Model ==========
+Accuracy: 0.5472
+Model Size (MB): 9.2852
+Latency (s per batch): 0.6254
+Latency (s per image): 0.0098
+
+========== Quantized (PTQ) Model ==========
+Accuracy: 0.5449
+Model Size (MB): 2.6434
+Latency (s per batch): 0.1427
+Latency (s per image): 0.0022
+
+========== Comparison Summary ==========
+Accuracy: Decreased by 0.42% (0.5472 → 0.5449)
+Model Size (MB): Decreased by 71.53% (9.2852 → 2.6434)
+Latency (s per batch): Decreased by 77.19% (0.6254 → 0.1427)
+Latency (s per image): Decreased by 77.19% (0.0098 → 0.0022)
+
+==========================================
