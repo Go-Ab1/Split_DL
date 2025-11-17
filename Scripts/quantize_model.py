@@ -4,20 +4,21 @@ from data_loader import DatasetLoader
 from model_network import ModifiedMobileNetV2
 from test import TestChecker
 
-# -------------------------------
-# Compression / Quantization Manager
-# -------------------------------
+# ================================
+# CompressionManager
+# Manages model compression and quantization processes.
+# ================================
 class CompressionManager:
+    """
+    Manages model quantization processes.
+        Args:
+        model (nn.Module): The model to be quantized.
+        backend (str): Quantization backend, either 'qnnpack(ARM)' or 'fbgemm(x86)'.
+    """
     def __init__(self, model, backend="fbgemm"):
-        """
-        Manages model compression and quantization processes.
-         Args:
-            model (nn.Module): The model to be quantized.
-            backend (str): Quantization backend, either 'qnnpack' or 'fbgemm'.
-        """
-
+      
         self.model = model
-        self.backend = backend  # qnnpack or fbgemm
+        self.backend = backend  
         torch.backends.quantized.engine = backend
 
     @staticmethod
@@ -25,7 +26,7 @@ class CompressionManager:
         """
         Changes ReLU6 activations to ReLU
         quantization compatibility
-        Inplace = True: Inputs are modified 
+        Inplace = True: Inputs are modified in place
         Inplace = False: Inputs are not modified in place
         """
         for name, mod in module.named_children():
@@ -73,27 +74,33 @@ class CompressionManager:
         self.model = quantize_fx.convert_fx(self.model.eval())
         return self.model
 
-# ------------------------------- 
-# CIFAR-10 Evaluation / Workflow
-# -------------------------------
+# ================================
+# Evaluates model performance, size, and latency. 
+# ================================
 class CIFAR10Evaluator:
+    """
+    Evaluator .
+        Args:
+        data_dir (str): Directory containing the CIFAR-10 dataset.
+        model_dir (str): Directory to save/load models.
+        batch_size (int): Batch size for data loading.
+        n_calib_batch (int): Number of batches for calibration.
+        backend (str): Quantization backend, either 'qnnpack(ARM)' or 'fbgemm(x86)'.
+        compare (bool): Whether to compare results (quantized vs. original).
+        seed (int): Random seed for reproducibility.
+    """
     def __init__(self, data_dir, model_dir="models", batch_size=64, n_calib_batch=64, backend="fbgemm" , compare = True, seed=1000): 
-        # self.data_dir = os.path.expanduser(data_dir)
+       
         self.compare = compare
-
         self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
         self.model_dir = os.path.abspath(os.path.expanduser(model_dir))
-
         os.makedirs(self.model_dir, exist_ok=True)
-
-
         self.batch_size = batch_size
         self.n_calib_batch = n_calib_batch
         self.backend = backend
         self.seed = seed
         self.device = torch.device("cpu") 
 
-        # Dataset
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465),(0.247, 0.243, 0.261))
@@ -112,6 +119,13 @@ class CIFAR10Evaluator:
   
 
     def load_state_dict(self, model_file):
+        """
+        Loads the model state dictionary from a file.
+        Args:
+            model_file (str): Path to the model file.
+        Returns:
+            dict: The loaded state dictionary.
+        """
         state_dict = torch.load(model_file, map_location="cpu")
         self.model.load_state_dict(state_dict)
         return state_dict
@@ -119,17 +133,35 @@ class CIFAR10Evaluator:
 
 
     def run_ptq(self, model_file, save_name):
+        """
+        Runs Post-Training Quantization (PTQ) on the model.
+        Args:
+            model_file (str): Path to the pre-trained model file.
+            save_name (str): Path to save the quantized model.
+        """
         state_dict = self.load_state_dict(model_file)
         self.model = self.quant_manager.apply_ptq(state_dict, self.calib_loader, self.example_inputs, self.n_calib_batch)
         self.save_scripted_model(save_name)
 
     def evaluate(self):
+        """
+        Evaluates the model on the test dataset.
+        Returns:
+            tuple: Accuracy, true labels, and predicted labels.
+        """
+
         tester = TestChecker(self.model, self.test_loader, device=self.device)
         acc, labels, preds = tester.evaluate()
         print(f"Test Accuracy: {acc:.4f}")
         return acc, labels, preds
 
     def measure_model_size(self):
+        """
+        Measures the size of the model in megabytes.
+        
+        Returns:
+            float: Model size in MB.
+        """
         buffer = io.BytesIO()
         torch.jit.save(torch.jit.script(self.model.cpu()), buffer)
         size_mb = buffer.getbuffer().nbytes / 1e6
@@ -137,6 +169,14 @@ class CIFAR10Evaluator:
         return size_mb    
 
     def measure_inference_latency(self, num_runs=5, batch_size=64):
+        """
+        Measures the average inference latency of the model on the CPU.
+        Args:
+            num_runs (int): Number of runs to average latency over.
+            batch_size (int): Number of images per batch.
+        Returns:
+            tuple: Average latency per batch and per image in seconds.
+        """
         self.model.to(self.device).eval()
         images, _ = next(iter(self.test_loader))
         images = images[:batch_size]
@@ -159,73 +199,11 @@ class CIFAR10Evaluator:
         return avg_latency_batch, latency_per_image
 
     def save_scripted_model(self, path):
+        """
+        Saves the scripted model to the specified path.
+        Args:
+            path (str): Path to save the scripted model.
+        """
         os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.jit.save(torch.jit.script(self.model.cpu()), path)
         print(f"Saved scripted model: {path}")
-
-        
-
-# --- - -- -----------------------
-# Usage [Test...]
-# ---------------------------------
-if __name__ == "__main__":
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-
-    evaluator = CIFAR10Evaluator(
-        data_dir=config.get("data_dir"),
-        compare=config.get("compare_models")
-    )
-
-    logger = QuantizationLogger(
-        base_dir=os.path.join(os.path.dirname(__file__), "..", config.get("media_log_dir", "media")),
-        log_name=config.get("comparison_log_name", "comparison_log.txt"),
-        clear_log=True
-    )
-
-    logger.log_to_file(f"Backend: {evaluator.backend}")
-    logger.log_to_file(f"Device: {evaluator.device}\n")
-
-    # --- Full Precision Evaluation ---
-    print("Evaluating full-precision model...")
-    evaluator.load_state_dict(config.get("trained_model_name"))
-    full_acc, _, _ = evaluator.evaluate()
-    full_size = evaluator.measure_model_size()
-    full_latency_batch, full_latency_image = evaluator.measure_inference_latency(num_runs=5, batch_size=64)
-
-    logger.log_section("Full-Precision Model", {
-        "Accuracy": full_acc,
-        "Model Size (MB)": full_size,
-        "Latency (s per batch)": full_latency_batch,
-        "Latency (s per image)": full_latency_image
-    })
-
-    # --- Run PTQ ---
-    print("\nRunning PTQ...")
-    evaluator.run_ptq(
-        model_file=config.get("trained_model_name"),
-        save_name=config.get("quantized_model_name")
-    )
-
-    ptq_acc, _, _ = evaluator.evaluate()
-    ptq_size = evaluator.measure_model_size()
-    ptq_latency_batch, ptq_latency_image = evaluator.measure_inference_latency(num_runs=5, batch_size=64)
-
-    logger.log_section("Quantized (PTQ) Model", {
-        "Accuracy": ptq_acc,
-        "Model Size (MB)": ptq_size,
-        "Latency (s per batch)": ptq_latency_batch ,
-        "Latency (s per image)": ptq_latency_image
-    })
-
-    # --- Comparison ---
-    if evaluator.compare:
-        print("\n--- Comparison: Full-precision vs PTQ ---")
-        logger.log_to_file("========== Comparison Summary ==========")
-        logger.compare_and_log("Accuracy", full_acc, ptq_acc)
-        logger.compare_and_log("Model Size (MB)", full_size, ptq_size)
-        logger.compare_and_log("Latency (s)", full_latency_batch, ptq_latency_batch)
-        logger.compare_and_log("Latency (s per image)", full_latency_image, ptq_latency_image)
-
-    logger.finalize()

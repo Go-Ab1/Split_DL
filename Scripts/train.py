@@ -1,7 +1,6 @@
 from model_network import *
 from data_loader import DatasetLoader
 
-
 ##======================================================
 # MainModelTrain
 # Handles training of ModifiedMobileNetV2 on CIFAR-10 dataset.
@@ -22,32 +21,33 @@ class MainModelTrain:
         lr (float): Initial learning rate.
         batch_size (int): Mini-batch size.
         save_dir (str): Directory path for saving models and logs.
-        log_file (str): CSV file path for training statistics logging.
+        log_file (str): txt file path for training statistics logging.
         train_loader, val_loader, test_loader (DataLoader): Data loaders for respective datasets.
         model (nn.Module): MobileNetV2-based classification model.
         criterion: CrossEntropyLoss for classification.
         optimizer: SGD with momentum and L2 weight decay.
         scheduler: Learning rate scheduler reducing LR on plateau of validation loss.
     """
-    def __init__(self, data_dir, batch_size=64, num_epochs=25, alpha=1, lr=0.01, log_file="training_log.txt", save_dir="media"):
+    def __init__(self, data_dir, batch_size=64, num_epochs=25, val_split=0.1, num_workers=4, alpha=1, lr=0.01, log_file="training_log.txt", save_dir="media"):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') 
-        self.inference_device = torch.device('cpu')  # Inference on CPU
+        self.inference_device = torch.device('cpu')  #  not used here
         self.num_epochs = num_epochs
         self.lr = lr
+        self.val_split = val_split
+        self.num_workers = num_workers
         self.batch_size = batch_size
         self.save_dir = os.path.expanduser(save_dir)
         self.save_dir_checker(self.save_dir)
         self.log_file = os.path.join(self.save_dir, "training_log.txt")
-        # Dataset
-        data_loader = DatasetLoader(data_dir, batch_size=self.batch_size, val_split=0.2)
+
+        data_loader = DatasetLoader(data_dir, batch_size=self.batch_size, val_split=self.val_split, num_workers=self.num_workers)
         self.train_loader, self.val_loader, self.test_loader = data_loader.get_dataloaders()
 
         # Model
         self.model = ModifiedMobileNetV2(output_size=10, alpha=alpha).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
-        # weight_decay = L2 regularization--> 4e-5(default for cifar10)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=4e-4)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.5, patience=2)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.8, patience=3)
 
         # Initialize log file
         with open(self.log_file, "w") as f:
@@ -60,7 +60,7 @@ class MainModelTrain:
             os.makedirs(folder, exist_ok=True)  
 
 
-    # Per Epoch Training
+
     def train_epoch(self):
         """
         Executes training for one epoch over the entire train dataset.
@@ -91,7 +91,7 @@ class MainModelTrain:
     @torch.no_grad()
     def evaluate(self, loader):
         """
-        Evaluate model performance on provided DataLoader (validation or test).
+        Evaluate model performance on provided DataLoader (validation here).
 
         Args:
             loader (DataLoader): DataLoader for evaluation dataset.
@@ -103,7 +103,6 @@ class MainModelTrain:
         self.model.eval()
         total_loss, correct, total = 0, 0, 0
         for images, labels in loader:
-            # print("evaluating(val dataset) on device:", self.device)
             images, labels = images.to(self.device), labels.to(self.device)
             outputs = self.model(images)
             loss = self.criterion(outputs, labels)
@@ -113,7 +112,6 @@ class MainModelTrain:
             correct += predicted.eq(labels).sum().item()
         return total_loss / total, correct / total     
 
-    # MODEL SIZE IN MB[] at for now removed after checked
     def measure_model_size(self):
         """
         Saves the model to disk to measure model size in megabytes.
@@ -161,7 +159,6 @@ class MainModelTrain:
                 print(f"Starting epoch {epoch+1}/{self.num_epochs}...")
             train_loss, train_acc = self.train_epoch()
             val_loss, val_acc = self.evaluate(self.val_loader)
-            # Maybe could be tested for test_loader as well but not ideal
             self.scheduler.step(val_loss) 
             current_lr = self.optimizer.param_groups[0]['lr']
             end_time = time.time()
@@ -178,7 +175,6 @@ class MainModelTrain:
 
             iteration += 1
         
-        # torch.save(self.model.state_dict(), "models/final_model.pth")
         self.save_model(filename="final_model.pth") 
         training_end_time = time.time()
         total_training_time = training_end_time - training_start_time
@@ -189,23 +185,9 @@ class MainModelTrain:
         num_params = sum(p.numel() for p in self.model.parameters())
         print(f"Total parameters: {num_params} and Model size (MB): {size_mb:.2f}")
 
-        # Summary to log file
+        # Summary to log file ----
         with open(self.log_file, "a") as f:
             f.write(f"\nModel size (MB): {size_mb:.2f}\n")
             f.write(f"Total training time (minutes): {total_training_time/60:.2f} for total epochs {self.num_epochs}\n")
             f.write(f"Total parameters: {num_params}\n")
 
-
-# ===============================
-# Mock Run
-# ===============================
-if __name__ == "__main__":
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    
-    data_dir = config.get("data_dir")
-    media_log_dir = config.get("media_log_dir")
-    trainer = MainModelTrain(data_dir=data_dir, batch_size=config.get("batch_size"), num_epochs=config.get("num_epochs"), alpha=config.get("alpha"), log_file=config.get("model_log"), save_dir=media_log_dir)
-    trainer.train()

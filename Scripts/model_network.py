@@ -8,16 +8,13 @@ from data_loader import DatasetLoader
 # This block implements the inverted residual bottleneck as described
 # in the MobileNetV2 architecture. It uses expansion with a pointwise 
 # 1x1 convolution, followed by a depthwise 3x3 convolution, and a final 
-# pointwise convolution projection. A skip (residual) connection is 
-# applied if input & output channels match without downsampling.
+# pointwise convolution projection. 
 # ===========================================================
 
 class InvResidualBlock(nn.Module):
  
     alpha = 1  # Width multiplier for channel scaling
     def __init__(self, input_channel, output_channel, t=6, downsample=False):
-       
-
         """
         Initializes the inverted residual block.
 
@@ -35,10 +32,7 @@ class InvResidualBlock(nn.Module):
             self.stride = 2
         else:
             self.stride = 1
-
         self.skip_connection = (not downsample) and (input_channel == output_channel) 
-
-        # Apply width multiplier alpha to channels for model scaling
         input_channel = int(self.alpha * input_channel)
         output_channel = int(self.alpha * output_channel)
         c = t * input_channel # Expanded channels
@@ -64,7 +58,6 @@ class InvResidualBlock(nn.Module):
             - Expansion conv + ReLU6
             - Depthwise conv + ReLU6
             - Projection conv (no activation)
-            - Residual addition if applicable
 
         Args:
             inputs (Tensor): Input feature map.
@@ -84,7 +77,6 @@ class InvResidualBlock(nn.Module):
 # ModifiedMobileNetV2 Network
 # MobileNetV2 variant classifier network, 
 # incorporating inverted residual bottleneck blocks.
-# Supports scaling with width multiplier alpha.
 # ===========================================================
 
 class ModifiedMobileNetV2(nn.Module):
@@ -107,7 +99,6 @@ class ModifiedMobileNetV2(nn.Module):
         
         self.bn0 = nn.BatchNorm2d(int(32 * alpha))
 
-        
         InvResidualBlock.alpha = alpha
         self.bottlenecks = nn.Sequential(
             InvResidualBlock(32, 16, t=1, downsample=False), 

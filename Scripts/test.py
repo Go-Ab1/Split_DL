@@ -3,10 +3,19 @@ from model_network import ModifiedMobileNetV2
 from data_loader import DatasetLoader
 
 
+
+#===============================
+# TestChecker
+# Test a trained model on test dataset, compute metrics,
+# generate confusion matrix and classification report,
+# measure inference latency, save results to file,
+# and visualize sample predictions.
+#===============================
+
 class TestChecker:
     def __init__(self, model , test_loader: DataLoader, device="cpu", class_names=None, save_dir="media", log_file="test_log.txt"):
         """
-        Class to evaluate a trained PyTorch model on test dataset, compute metrics,
+        Evaluate a trained PyTorch model on test dataset, compute metrics,
         generate confusion matrix and classification reports, measure inference latency,
         save results to file, and visualize sample predictions.
 
@@ -22,7 +31,6 @@ class TestChecker:
         self.device = device
         self.model = model.to(self.device)   
         self.class_names = class_names
-        # self.criterion = nn.CrossEntropyLoss()
         self.save_dir = save_dir
         self.log_file = log_file
         os.makedirs(self.save_dir, exist_ok=True)
@@ -47,8 +55,6 @@ class TestChecker:
             # print("Testing on device:", self.device)
             images, labels = images.to(self.device), labels.to(self.device)
             outputs = self.model(images)
-            # loss = self.criterion(outputs, labels)
-            # total_loss += loss.item() * images.size(0)
             _, preds = torch.max(outputs, 1)
             total += labels.size(0)
             correct += preds.eq(labels).sum().item()
@@ -56,7 +62,6 @@ class TestChecker:
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-        # avg_loss = total_loss / total
         accuracy = correct / total
         return  accuracy, np.array(all_labels), np.array(all_preds)
 
@@ -111,7 +116,7 @@ class TestChecker:
         images, _ = next(iter(self.test_loader))
         images = images[:batch_size].to(self.device)
 
-        # Warm-up runs
+        # Warm-up runs for accurate timing
         # with torch.no_grad():
         with torch.inference_mode():
             for _ in range(10):
@@ -196,39 +201,3 @@ class TestChecker:
 
 
 
-
-
-# # ======================
-# # Usage [Test...]
-# # ======================
-if __name__ == "__main__":
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-
-    
-    data_dir = config.get("data_dir")
-    media_log_dir = config.get("media_log_dir") 
-    test_log_name = config.get("test_log")  
-
-    models_dir = os.path.join(project_root, config.get("models_dir", "models"))
-    model_path = os.path.join(models_dir, config.get("trained_model_name", "final_model.pth"))
-
-
-    loader = DatasetLoader(data_dir, batch_size=64)
-    _, _, test_loader = loader.get_dataloaders()
-    class_names = [str(i) for i in range(10)]  
-
-    model = ModifiedMobileNetV2(output_size=10, alpha=1)
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
-
-    tester = TestChecker(model, test_loader, device="cpu", class_names=class_names, save_dir=media_log_dir, log_file=test_log_name)
-    latency_batch, latency_image = tester.measure_inference_latency(num_runs=5, batch_size=32)
-
-    acc, labels, preds = tester.evaluate()
-    print(f"Test Accuracy: {acc:.4f}")
-    report = tester.classification_report(labels, preds)
-    cm = tester.compute_confusion_matrix(labels, preds)
-    tester.save_results(acc, report, cm, latency_batch=latency_batch, latency_image=latency_image)
-    tester.visualize_samples(num_samples=30)

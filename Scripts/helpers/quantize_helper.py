@@ -1,6 +1,9 @@
 import os
 import datetime
 
+# ===================================================
+# Quantization Logger
+# ===================================================
 class QuantizationLogger:
     def __init__(self, base_dir="media", log_name="comparison_log.txt",
                  clear_log=True, root_dir=None):

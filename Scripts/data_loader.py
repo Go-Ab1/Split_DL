@@ -19,7 +19,7 @@ class DatasetLoader:
 
     Returns:
         train_loader, val_loader, test_loader (DataLoader): PyTorch DataLoaders
-        for training, validation, and test sets respectively.
+        for training, validation, and test sets
     '''
     def __init__(self, data_dir, batch_size=64, val_split=0.1, num_workers=4):
         self.data_dir = data_dir
@@ -30,12 +30,11 @@ class DatasetLoader:
 
     def check_make_dataset_dir(self, folder):
         """
-        Verify if dataset directory exists; create if not.
+        Verify if main dataset directory exists; create if not.
 
         Args:
             folder (str): Dataset directory path.
         """
-        # CIFAR-10 dataset folder
         if not os.path.exists(folder):
             os.makedirs(folder)
 
@@ -54,7 +53,6 @@ class DatasetLoader:
         
         """
         Create train, validation, and test DataLoader objects with data augmentations.
-
         Training data is augmented with random crops, flips, rotations, and color jitter.
 
         Returns:
@@ -78,11 +76,10 @@ class DatasetLoader:
         train_dataset = CIFAR10(root=self.data_dir, train=True, download=download_flag, transform=transform_train)
         val_size = int(len(train_dataset) * self.val_split)
         train_size = len(train_dataset) - val_size
+        
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
-
         test_dataset = CIFAR10(root=self.data_dir, train=False, download=download_flag, transform=transform_test)
 
-        # Dataloaders
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)

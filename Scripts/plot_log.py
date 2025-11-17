@@ -1,9 +1,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ----------------------------------------------------------
+# Log Plotter
+# ----------------------------------------------------------
 class LogPlotter:
     """
-    TXT file plotter 
+    Loads training log data from a CSV file and provides methods to plot
+    training and validation loss and accuracy over epochs.
     """
     def __init__(self, log_path):
         self.log_path = log_path
@@ -27,7 +31,7 @@ class LogPlotter:
                 self.data[col] = self.data[col].astype(dtype)
 
     # ----------------------------------------------------------
-    # NEW: Separate loss plot
+    # loss plot
     # ----------------------------------------------------------
     def plot_loss(self):
         plt.figure(figsize=(10, 6))
@@ -42,7 +46,7 @@ class LogPlotter:
         plt.show()
 
     # ----------------------------------------------------------
-    # NEW: Separate accuracy plot
+    # accuracy plot
     # ----------------------------------------------------------
     def plot_accuracy(self):
         plt.figure(figsize=(10, 6))
@@ -57,9 +61,9 @@ class LogPlotter:
         plt.show()
 
     # ----------------------------------------------------------
-    # OPTIONAL: Keep combined plot if needed
+    # combined plot 
     # ----------------------------------------------------------
-    def plot_all(self):
+    def plot_accu_loss(self):
         fig, ax1 = plt.subplots(figsize=(10, 6))
 
         ax1.plot(self.data['epoch'], self.data['train_loss'], 'r-', label='Train Loss')
@@ -85,6 +89,6 @@ if __name__ == "__main__":
     plotter = LogPlotter(log_path="media/training_log.txt")    
     plotter.load_log()
     
-    plotter.plot_loss()
-    plotter.plot_accuracy()
-    # plotter.plot_all()
+    # plotter.plot_loss()
+    # plotter.plot_accuracy()
+    plotter.plot_accu_loss()

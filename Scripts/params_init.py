@@ -1,10 +1,22 @@
 from helpers.global_import import *
 
+# ================================
+# WeightsInitializer
+# Initializes model parameters.
+# ================================
+
 class WeightsInitializer:
+    """Utility class to initialize model parameters."""
     @staticmethod
     def initialize(model):
         """
-        Initialize model parameters.
+        Initialize the weights of a PyTorch model.
+
+        Convolutional layers: He initialization (normal distribution)
+        BatchNorm layers: weights=1, bias=0
+
+        Args:
+            model (nn.Module): The PyTorch model to initialize.
         """
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
