@@ -19,6 +19,7 @@ Scripts/
 ├── quantize_model.py       # Post-training quantization pipeline
 ├── data_loader.py          # Dataset loading 
 ├── model_network.py        # Model architecture
+├── params_init.py          # Model weights initializer
 ├── plot_log.py             # Model architecture
 ├── helpers/                # utils functions
 │   ├── global_import.py    # packages
@@ -27,14 +28,13 @@ Scripts/
 ## Installation
 
 Follow the steps below to set up the required Python environment and install the dependencies.
-1. Navigate to the project directory:
+1. Clone this project repo:
 ```bash
-cd /path/to/this/project
+git clone git@github.com:Go-Ab1/Split_DL.git
 ```
 2. Create and activate a Python virtual environment[Recommended]
 ```bash
  python3 -m venv pytorch_env
- #Ubuntu
  source pytorch_env/bin/activate 
 ```
 3. Install dependencies:
