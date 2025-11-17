@@ -1,7 +1,0 @@
-========== Model Comparison Log ==========
-Run Time: 2025-11-17 15:32:47
-==========================================
-
-Backend: qnnpack
-Device: cpu
-
