@@ -67,6 +67,7 @@ python3 Scripts/main.py train
 # Visualize logs after training:
 # - Plots loss curves
 # - Plots accuracy curves
+
 python3 Scripts/plot_log.py
 
 # ------------------------------------------
@@ -78,6 +79,7 @@ python3 Scripts/plot_log.py
 # - Classification
 # - Confusion matrix
 # - Inference latency (batch & per-image)
+
 python3 Scripts/main.py test
 
 # ------------------------------------------
@@ -90,7 +92,7 @@ python3 Scripts/main.py test
 # - Latency comparison (FP32 vs INT8)
 # - Accuracy comparison
 
-python3 Scripts/main.py quantize
+python3 Scripts/main.py quant
 
 # ------------------------------------------
 # 4. CHAINED WORKFLOWS
@@ -98,15 +100,15 @@ python3 Scripts/main.py quantize
 
 # Train → Test
 # (Complete pipeline for performance evaluation)
+
 python3 Scripts/main.py train test
 
-# OR
 
 # Train → Quantize
 # (Complete pipeline for optimizing deployed models)
-python3 Scripts/main.py train quantize
-```
 
+python3 Scripts/main.py train quant
+```
 
 ## Configuration Parameters
 All parameters can be modified in ```config.yaml``` and can be adjusted as required.
